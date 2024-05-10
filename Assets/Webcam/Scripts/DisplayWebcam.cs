@@ -5,6 +5,8 @@ using System.Data;
 
 public class DisplayWebcam : MonoBehaviour
 {
+    [SerializeField]
+    private UnityEngine.UI.RawImage _rawImage;
     void Start()
     {
         WebCamDevice[] devices = WebCamTexture.devices;
@@ -18,7 +20,7 @@ public class DisplayWebcam : MonoBehaviour
         Renderer rend = this.GetComponentInChildren<Renderer>();
 
         // assuming the first available WebCam is desired
-        WebCamTexture tex = new WebCamTexture(devices[0].name);
+        WebCamTexture tex = new WebCamTexture(devices[1].name);
         rend.material.mainTexture = tex;
         tex.Play();
     }
