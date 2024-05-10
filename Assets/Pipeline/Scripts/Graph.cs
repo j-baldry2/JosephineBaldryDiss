@@ -19,6 +19,74 @@ public class Graph
     public List<Track> Tracks;
     public List<StructurePoint> StructurePoints;
 
+    public static void test()
+    {
+        double[,] invdata = {
+            { 1.0, 2.0, 3.0, 4.0 },
+            { 5.0, 6.0, 7.0, 8.0 },
+            { 9.0, 10.0, 11.0, 12.0 }
+        };
+
+        double[,] c1data = {
+            { 1.0, 2.0, 3.0, 4.0 },
+            { 5.0, 6.0, 7.0, 8.0 },
+            { 9.0, 10.0, 11.0, 12.0 }
+        };
+
+        double[,] c2data = {
+            { 13.0, 14.0, 15.0, 16.0 },
+            { 17.0, 18.0, 19.0, 20.0 }
+        };
+
+        Mat invTestMatrix = new Mat(3, 4, MatType.CV_64FC1, invdata);
+        Mat c1TestMatrix = new Mat(3, 4, MatType.CV_64FC1, c1data);
+        Mat c2TestMatrix = new Mat(3, 3, MatType.CV_64FC1, c2data);
+
+        Mat resultstestInv = Inv_Rt(invTestMatrix);
+        Mat resultstestConc = Concat_Rt(c1TestMatrix, c2TestMatrix);
+
+        List<string> invstringlist = new List<string>();
+
+        for (int i = 0; i < resultstestInv.Rows; ++i)
+        {
+            string thisrow = "";
+            for (int j = 0; j < resultstestInv.Cols; ++j)
+            {
+                thisrow += resultstestInv.At<float>(i, j);
+            }
+            invstringlist.Add(thisrow);
+        }
+
+        List<string> concstringlist = new List<string>();
+
+        for (int i = 0; i < resultstestConc.Rows; ++i)
+        {
+            string thiconcsrow = "";
+            for (int j = 0; j < resultstestConc.Cols; ++j)
+            {
+                thiconcsrow += resultstestConc.At<float>(i, j);
+            }
+            concstringlist.Add(thiconcsrow);
+        }
+
+        using (StreamWriter writer = new StreamWriter("Assets/Pipeline/Testing/inconv.txt", append: true))
+        {
+            writer.WriteLine($"Inverse Results");
+            for (int i = 0; i < invstringlist.Count; ++i)
+            {
+                writer.WriteLine($"{invstringlist[i]}");
+            }            
+            
+            writer.WriteLine($"Concatenation Results");
+            for (int i = 0; i < concstringlist.Count; ++i)
+            {
+                writer.WriteLine($"{concstringlist[i]}");
+            }
+            
+        }
+
+    }
+
     public Graph()
     {
         ncams = 0;
@@ -348,4 +416,5 @@ public class Graph
         }
         return point_array;
     }
+
 }

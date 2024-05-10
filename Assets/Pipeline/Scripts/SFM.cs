@@ -155,7 +155,7 @@ public class SFM : MonoBehaviour
         //BUNDLE ADJUSTMENT STUFF WOULD GO HERE BUT IDK HOW TO DO IT
         //SO IM GOING STRAIGHT TO MERGING GRAPHS
 
-
+        Graph.test();
         //Merging Graphs
         List<int> mergedGraphs = Enumerable.Repeat(0, graphs.Count).ToList();
         mergedGraphs[0] = 1;
@@ -178,19 +178,6 @@ public class SFM : MonoBehaviour
         List<Vec3f> pa = global_graph.return_points();
         List<Vector3> vec3_pa = new List<Vector3>();
         List<Color> col_arr = new List<Color>();
-        using (StreamWriter writer = new StreamWriter("Assets/Pipeline/Scripts/globalpoints.txt", append: true))
-        {
-            // Write the reprojection error to the file
-            foreach (Vec3f coord in pa)
-            {
-                writer.WriteLine($"{coord.Item0},{coord.Item1},{coord.Item2}");
-                vec3_pa.Add(new Vector3(coord.Item0, coord.Item1, coord.Item2));
-
-                //Would add colour here if i found colours, just will make them all black
-                col_arr.Add(new Color(0, 0, 0, 1));
-            }
-
-        }
 
         render.GetComponent<PointCloudRenderer>().SetParticles(vec3_pa.ToArray(), col_arr.ToArray());
 
@@ -287,6 +274,7 @@ public class SFM : MonoBehaviour
         InputArray IaPoints1 = InputArray.Create(points1);
         InputArray IaPoints2 = InputArray.Create(points2);
 
+        /*
         Mat mop1 = new Mat( 3,points1.Count / 3, MatType.CV_64FC1);
         Mat mop2 = new Mat( 3,points2.Count / 3, MatType.CV_64FC1);
         int pcount = 0;
@@ -310,19 +298,9 @@ public class SFM : MonoBehaviour
             }
 
         }
-
+        */
         //get fund matrix - need to add outliers back here
-        //This does not work
         fundamentalMatrix = Cv2.FindFundamentalMat(IaPoints1, IaPoints2, FundamentalMatMethod.Ransac, 3.0, 0.1);
-
-        if (!fundamentalMatrix.Empty())
-        {
-        using (StreamWriter writer = new StreamWriter("Assets/Pipeline/Testing/fmatresults.txt", append: true))
-            {
-                double error = testF(fundamentalMatrix, mop1, mop2 );
-                writer.WriteLine($"error for pair {imgInd1}{imgInd2} is {error}");
-            }
-        }
 
 
         //Lots of time returns empty lmao. should probably pop the pair in this case
@@ -515,11 +493,12 @@ public class SFM : MonoBehaviour
 
         for (int i = 0; i < pointMat.Rows; ++i)
         {
-            Vec4d point;
-            point.Item0 = pointMat.At<float>(i, 0);
-            point.Item1 = pointMat.At<float>(i, 1);
-            point.Item2 = pointMat.At<float>(i, 2);
-            graph.StructurePoints.Add(new StructurePoint(new Vec3f((float)point.Item0, (float)point.Item1, (float)point.Item2)));
+            Point3f point;
+            point.X = pointMat.At<float>(i, 0);
+            point.Y = pointMat.At<float>(i, 1);
+            point.Z = pointMat.At<float>(i, 2);
+            graph.StructurePoints.Add(new StructurePoint(new Vec3f((float)point.X, (float)point.Y, (float)point.Z)));
+            TestT(point);
         }
 
         return graph;
@@ -527,16 +506,14 @@ public class SFM : MonoBehaviour
     #endregion
 
     #region testing
-    double testF(Mat F, Mat pts1, Mat pts2)
+
+    private void TestT(Point3f point)
     {
-        Mat intermediate = F * pts1;
-        Mat vals = pts2.T() * intermediate;
-        Mat absVals = vals.Abs();
-        Scalar meanScalar = Cv2.Mean(absVals);
-        double avgError = meanScalar.Val0;
-        return avgError;
-    }
-        
+        using (StreamWriter writer = new StreamWriter("Assets/Pipeline/Testing/triangulateresults.txt", append: true))
+        {
+          writer.WriteLine($"({point.X},{point.Y},{point.Z})");
+        }
+    }  
    
 
     #endregion
