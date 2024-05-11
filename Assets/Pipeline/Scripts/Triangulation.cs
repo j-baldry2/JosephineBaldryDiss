@@ -5,6 +5,7 @@ using OpenCvSharp;
 
 public class Triangulation
 {
+    //dead code not in use. should implement triangulation here for real
     public Graph triangulate_nonlinear_G(Graph graph)
     {
         int ntracks = graph.Tracks.Count;

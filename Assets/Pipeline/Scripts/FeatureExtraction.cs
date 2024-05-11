@@ -32,6 +32,7 @@ public class FeatureExtraction : WebCamera
 
     protected override bool ProcessTexture(WebCamTexture input, ref Texture2D output)
     {
+        //dead code. would be used for real time pc gen
         image = OpenCvSharp.Unity.TextureToMat(input);
         compImage = Cv2.ImRead(@"Assets/Pipeline/Scripts/previmg.bmp", ImreadModes.Color);
         Cv2.ImWrite(@"Assets/Pipeline/Scripts/previmg.bmp", image);

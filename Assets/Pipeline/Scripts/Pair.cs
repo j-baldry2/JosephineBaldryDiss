@@ -63,14 +63,12 @@ public class Pair
         Mat intrinsics_mat_0 = new Mat(3, 3, MatType.CV_32FC1);
         Mat intrinsics_mat_1 = new Mat(3, 3, MatType.CV_32FC1);
 
-        // Assign values to intrinsics_mat_0
         intrinsics_mat_0.Set<float>(0, 0, f);
         intrinsics_mat_0.Set<float>(1, 1, f);
         intrinsics_mat_0.Set<float>(0, 2, w);
         intrinsics_mat_0.Set<float>(1, 2, h);
         intrinsics_mat_0.Set<float>(2, 2, 1.0f);
 
-        // Assign intrinsics_mat_1 the same values as intrinsics_mat_0
         intrinsics_mat_1 = intrinsics_mat_0.Clone();
 
         IntrinsicsMat.Add(intrinsics_mat_0);

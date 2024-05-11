@@ -52,7 +52,7 @@ public class SFM : MonoBehaviour
             }
             else
             {
-                images.Add(image); // Add the read image to the list
+                images.Add(image);
                 orb(i);
             }
 
@@ -82,7 +82,6 @@ public class SFM : MonoBehaviour
                 List<KeyPoint> kp1 = new List<KeyPoint>();
                 List<KeyPoint> kp2 = new List<KeyPoint>();
                 nPair.Matches = bf_matcher(descriptors[i], descriptors[j], i, j, out kp1, out kp2).ToList();
-                //Debug.Log($"match count of pair {i},{j}, was {nPair.Matches.Count}");
                 nPair.add_keypoints(kp1, kp2);
 
                 if (nPair.KeyPoints[0].Count > 0)
@@ -152,10 +151,11 @@ public class SFM : MonoBehaviour
 
         }
         Debug.Log("Completed GM");
-        //BUNDLE ADJUSTMENT STUFF WOULD GO HERE BUT IDK HOW TO DO IT
-        //SO IM GOING STRAIGHT TO MERGING GRAPHS
+        //BUNDLE ADJUSTMENT STUFF WOULD GO HERE
+        //TODO THIS
 
-        Graph.test();
+        //Graph.test();
+
         //Merging Graphs
         List<int> mergedGraphs = Enumerable.Repeat(0, graphs.Count).ToList();
         mergedGraphs[0] = 1;
@@ -167,8 +167,6 @@ public class SFM : MonoBehaviour
         while ((icam = Graph.find_next_graph(graphs, global_graph, ref mergedGraphs)) > 0)
         {
 
-            //Debug.Log(graphs[icam].Tracks.Count);
-            //Debug.Log(graphs[icam].StructurePoints.Count);
             Graph.merge_graph(ref global_graph, graphs[icam]);
             global_graph = triangulation(global_graph);
             count++;
@@ -209,7 +207,7 @@ public class SFM : MonoBehaviour
         matches.Sort((m1, m2) => m1.Distance.CompareTo(m2.Distance));
 
         //Lowes ratio
-        double ratioThreshold = 0.99; //Ratio threshold - high right now so get lots of nice matches
+        double ratioThreshold = 0.99; //Ratio threshold - lower for less matches, higher for more
         List<DMatch> goodMatches = new List<DMatch>();
 
         for (int k = 0; k < matches.Count - 1; k++)
@@ -238,16 +236,15 @@ public class SFM : MonoBehaviour
     #region RANSAC
     private bool fund_est(int imgInd1, int imgInd2, List<DMatch> matches, out Mat fundamentalMatrix)
     {
-        //This needs testing in full - i am not sure if it works
-        //fundamentalMatrix = new Mat();
-
-        //convert DMatch to Point2f
+        //This needs testing in full - should check error using dot product
+        //https://stackoverflow.com/questions/12098363/testing-a-fundamental-matrix#:~:text=To%20test%20if%20the%20fundamental,difference%20between%20the%20cameras%20was.
+        //might work?
         List<Point2f> points1 = new List<Point2f>();
         List<Point2f> points2 = new List<Point2f>();
 
         foreach (DMatch match in matches)
         {
-            //Floating point fuckery im sure theres an easier way to do this but i just wanted to work
+            //Floating point stuff
             Point2f p1 = keyPoints[imgInd1][match.QueryIdx].Pt;
             Point2f p2 = keyPoints[imgInd2][match.ImgIdx].Pt;
 
@@ -260,13 +257,10 @@ public class SFM : MonoBehaviour
             Point2f rp2 = new Point2f(r2x, r2y);
             points1.Add(rp1);
             points2.Add(rp2);
-            //Debug.Log(rp1);
         }
 
-        //Debug.Log($"Pair {imgInd1}:{imgInd2}:  Point 1 count is {points1.Count} and point 2 count is {points2.Count}");
         if (points1.Count == 0)
         {
-            //Debug.Log("there were no points :D");
             fundamentalMatrix = Mat.Zeros(3, 3, MatType.CV_32FC1);
             return false;
         }
@@ -274,41 +268,14 @@ public class SFM : MonoBehaviour
         InputArray IaPoints1 = InputArray.Create(points1);
         InputArray IaPoints2 = InputArray.Create(points2);
 
-        /*
-        Mat mop1 = new Mat( 3,points1.Count / 3, MatType.CV_64FC1);
-        Mat mop2 = new Mat( 3,points2.Count / 3, MatType.CV_64FC1);
-        int pcount = 0;
-        for (int i = 0; i < 3; ++i)
-        {
-            for (int j = 0; j < mop1.Rows; ++j)
-            {
-                mop1.Set<Point2f>(j, i, points1[pcount]);
-                pcount++;
-            }
 
-        }
-
-        pcount = 0;
-        for (int i = 0; i < 3; ++i)
-        {
-            for (int j = 0; j < mop2.Rows; ++j)
-            {
-                mop2.Set<Point2f>(j, i, points2[pcount]);
-                pcount++;
-            }
-
-        }
-        */
-        //get fund matrix - need to add outliers back here
         fundamentalMatrix = Cv2.FindFundamentalMat(IaPoints1, IaPoints2, FundamentalMatMethod.Ransac, 3.0, 0.1);
 
 
-        //Lots of time returns empty lmao. should probably pop the pair in this case
 
         if (fundamentalMatrix.Empty())
         {
             fundamentalMatrix = Mat.Zeros(3, 3, MatType.CV_32FC1);
-            //Debug.Log("It was empty again!");
             return false;
         }
         return true;
@@ -333,7 +300,7 @@ public class SFM : MonoBehaviour
         //Rts is a list of mats, each mat is a combination of a rm R and tv T
         // assigns the rotation matrix R to the top-left 3x3 block of the current
         // Rts matrix and assigns the translation vector t to the top-right 3x1 block.
-        //this is the EXTRINSIC MATRIX YAHOO!!!!!!!!!!!!11
+        //this is the EXTRINSIC MATRIX
         List<Mat> Rts = new List<Mat>(4);
         for (int i = 0; i < Rs.Count; ++i)
         {
@@ -348,7 +315,7 @@ public class SFM : MonoBehaviour
             }
         }
 
-        //should do stuff here that calculates the best RTS but im just going to pick the first one 
+        //should do stuff here that calculates the best RTS but just picks first one 
 
 
         Mat extrmat1 = Rts[0];
@@ -374,19 +341,17 @@ public class SFM : MonoBehaviour
         Mat w = svd.W;
         Mat vt = svd.Vt;
 
-        //initialize matrix W
         Mat W = new Mat(3, 3, MatType.CV_32FC1);
         W.Set<float>(0, 0, 0); W.Set<float>(0, 1, -1); W.Set<float>(0, 2, 0);
         W.Set<float>(1, 0, 1); W.Set<float>(1, 1, 0); W.Set<float>(1, 2, 0);
         W.Set<float>(2, 0, 0); W.Set<float>(2, 1, 0); W.Set<float>(2, 2, 1);
 
-        //initialize matrix Z
         Mat Z = new Mat(3, 3, MatType.CV_32FC1);
         Z.Set<float>(0, 0, 0); Z.Set<float>(0, 1, 1); Z.Set<float>(0, 2, 0);
         Z.Set<float>(1, 0, -1); Z.Set<float>(1, 1, 0); Z.Set<float>(1, 2, 0);
         Z.Set<float>(2, 0, 0); Z.Set<float>(2, 1, 0); Z.Set<float>(2, 2, 0);
 
-        //s is the Skew-symmetric matrix (translation vector??)
+        //s is the Skew-symmetric matrix (translation vector)
         Mat S = U * Z * U.Transpose();
 
         //t holds two possible translation vectors
@@ -397,7 +362,6 @@ public class SFM : MonoBehaviour
         R.Add(U * W * vt.Transpose());
         R.Add(U * W.Transpose() * vt.Transpose());
 
-        //Honstly not sure what this done
         //checks determinants of rotation matrices and adjusts signs if necessary 
         //for proper orientation
         if (R[0].Determinant() < 0)
@@ -445,10 +409,8 @@ public class SFM : MonoBehaviour
         {
             return graph;
         }
-        //IDK if pts1 and 2 are meant to be the same size
         for (int i = 0; i < kps1.Count; ++i)
         {
-            //Debug.Log(kps1[i].Pt.X);
             pts1.Set<Point2f>(0, i, kps1[i].Pt);
 
         }
@@ -472,13 +434,10 @@ public class SFM : MonoBehaviour
         Mat pointMat = new Mat();
 
         List<Mat> points4d = new List<Mat>();
-        //This could be so completely wrong with the two
         Mat inpmat1 = intr_mat * extr_mat1;
         Mat inpmat2 = intr_mat * extr_mat2;
 
 
-        //This is super wrong lmfao
-        //its very broken
         if (true)
         {
             Cv2.TriangulatePoints(inpmat1, inpmat2, pts1_ud, pts2_ud, pointMat);
@@ -518,10 +477,3 @@ public class SFM : MonoBehaviour
 
     #endregion
 }
-
-
-
-/*TODO:
- * Fix outliers
- * Remove pairs w low point correspondance
- */

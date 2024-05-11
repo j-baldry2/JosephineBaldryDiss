@@ -192,16 +192,6 @@ public class Graph
             mergedGraph[ind_selected] = 1;
         }
 
-        using (StreamWriter writer = new StreamWriter("Assets/Pipeline/Scripts/mergegraph.txt", append: true))
-        {
-            string ls = "";
-            // Write the reprojection error to the file
-            foreach (int i in mergedGraph)
-            {
-                ls += i;
-            }
-            writer.WriteLine($"state of the graph is: {ls}");
-        }
 
         return ind_selected;
     }
@@ -249,51 +239,6 @@ public class Graph
             graph1.IntrinsicsMats.Add(graph2.IntrinsicsMats[ind_cam]);
             graph1.ExtrinsicsMats.Add(Graph.Concat_Rt(Rt21, graph2.ExtrinsicsMats[ind_cam]));
         }
-
-        /*
-        if (true)
-        {
-            Mat ext_mat1 = Graph.Concat_Rt(graph2.ExtrinsicsMats[0], Rt21Inv);
-            Mat ext_mat2 = Graph.Concat_Rt(graph2.ExtrinsicsMats[1], Rt21Inv);
-            Mat pose1 = graph2.IntrinsicsMats[0] * ext_mat1;
-            Mat pose2 = graph2.IntrinsicsMats[1] * ext_mat2;
-
-            for (int i = 0; i < graph2.StructurePoints.Count; ++i)
-            {
-                Vec3f pt3d = graph2.StructurePoints[i].getCoord();
-                Mat pt3dHomogeneous = new Mat(4, 1, MatType.CV_32F);
-                pt3dHomogeneous.Set<float>(0, 0, pt3d.Item0);
-                pt3dHomogeneous.Set<float>(1, 0, pt3d.Item1);
-                pt3dHomogeneous.Set<float>(2, 0, pt3d.Item2);
-                pt3dHomogeneous.Set<float>(3, 0, 1.0f);
-
-                Mat pt1_m = pose1 * pt3dHomogeneous;
-                Mat pt2_m = pose2 * pt3dHomogeneous;
-                Vec3f pt1 = new Vec3f(pt1_m.At<float>(0), pt1_m.At<float>(1), pt1_m.At<float>(2));
-                Vec3f pt2 = new Vec3f(pt2_m.At<float>(0), pt2_m.At<float>(1), pt2_m.At<float>(2));
-
-                Vec2f pt1_head = new Vec2f(pt1.Item0 / pt1.Item2, pt1.Item1 / pt1.Item2);
-                Vec2f pt2_head = new Vec2f(pt2.Item0 / pt2.Item2, pt2.Item1 / pt2.Item2);
-                Vec2f key1 = graph2.Tracks[i][0].Pt;
-                Vec2f key2 = graph2.Tracks[i][1].Pt;
-
-                Vec2f projectedPt1 = new Vec2f(pt1[0] / pt1[2], pt1[1] / pt1[2]); // Normalized image coordinates for pt1
-                Vec2f projectedPt2 = new Vec2f(pt2[0] / pt2[2], pt2[1] / pt2[2]); // Normalized image coordinates for pt2
-
-                Vec2f dx = new Vec2f(projectedPt1.Item0 - key1.Item0 + projectedPt2.Item0 - key2.Item0,
-                                    projectedPt1.Item1 - key1.Item1 + projectedPt2.Item1 - key2.Item1);
-
-                float dotProduct = dx.Item0 * dx.Item0 +
-                   dx.Item1 * dx.Item1;
-                using (StreamWriter writer = new StreamWriter("Assets/Pipeline/Scripts/reprojection_error.txt", append: true))
-                {
-                    // Write the reprojection error to the file
-                    writer.WriteLine($"reprojection error: {dotProduct}");
-                }
-            }
-        
-        }
-           */
 
         graph1.ncams = graph1.Cams.Count;
         int ntracks = graph1.Tracks.Count;
